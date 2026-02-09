@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.rtl.min.css"
+          integrity="sha384-CfCrinSRH2IR6a4e6fy2q6ioOX7O6Mtm1L9vRvFZ1trBncWmMePhzvafv7oIcWiW"
+          crossorigin="anonymous">
+
+    <title>Burnout Score Prediction</title>
+</head>
+
+<body style="background-color:#243a50;">
+
+<div class="login mx-auto mt-5 bg-white p-4 rounded" style="max-width: 800px;">
+
+    <h1 class="text-center">Employee Burnout Score Prediction</h1>
+
+    <form action="{{ url_for('predict_datapoint') }}" method="post">
+
+        <h4 class="text-center mt-3">
+            <legend>Burnout Score Prediction Form</legend>
+        </h4>
+        <hr>
+
+        <!-- Day Type -->
+        <div class="mb-3 row align-items-center">
+            <label class="col-sm-4 col-form-label fw-bold">Day Type</label>
+            <div class="col-sm-8">
+                <select class="form-select" name="day_type" required>
+                    <option value="" {% if not form_data.day_type %}selected{% endif %}>
+                        Select Day Type
+                    </option>
+                    <option value="1" {% if form_data.day_type == '1' %}selected{% endif %}>
+                        Weekday
+                    </option>
+                    <option value="0" {% if form_data.day_type == '0' %}selected{% endif %}>
+                        Weekend
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Work Hours -->
+        <div class="mb-3 row align-items-center">
+            <label class="col-sm-4 col-form-label fw-bold">Work Hours</label>
+            <div class="col-sm-8">
+                <input class="form-control"
+                       type="number"
+                       step="0.1"
+                       name="work_hours"
+                       placeholder="Enter work hours"
+                       value="{{ form_data.work_hours }}">
+            </div>
+        </div>
+
+        <!-- Screen Time Hours -->
+        <div class="mb-3 row align-items-center">
+            <label class="col-sm-4 col-form-label fw-bold">Screen Time (hours)</label>
+            <div class="col-sm-8">
+                <input class="form-control"
+                       type="number"
+                       step="0.1"
+                       name="screen_time_hours"
+                       placeholder="Enter screen time hours"
+                       value="{{ form_data.screen_time_hours }}">
+            </div>
+        </div>
+
+        <!-- Meetings Count -->
+        <div class="mb-3 row align-items-center">
+            <label class="col-sm-4 col-form-label fw-bold">Meetings Count</label>
+            <div class="col-sm-8">
+                <input class="form-control"
+                       type="number"
+                       name="meetings_count"
+                       placeholder="Enter meetings count"
+                       value="{{ form_data.meetings_count }}">
+            </div>
+        </div>
+
+        <!-- Breaks Taken -->
+        <div class="mb-3 row align-items-center">
+            <label class="col-sm-4 col-form-label fw-bold">Breaks Taken</label>
+            <div class="col-sm-8">
+                <input class="form-control"
+                       type="number"
+                       name="breaks_taken"
+                       placeholder="Enter breaks taken"
+                       value="{{ form_data.breaks_taken }}">
+            </div>
+        </div>
+
+        <!-- After Hours Work -->
+        <div class="mb-3 row align-items-center">
+            <label class="col-sm-4 col-form-label fw-bold">After-hours Work (hours)</label>
+            <div class="col-sm-8">
+                <input class="form-control"
+                       type="number"
+                       step="0.1"
+                       name="after_hours_work"
+                       placeholder="Enter after-hours work"
+                       value="{{ form_data.after_hours_work }}">
+            </div>
+        </div>
+
+        <!-- Sleep Hours -->
+        <div class="mb-3 row align-items-center">
+            <label class="col-sm-4 col-form-label fw-bold">Sleep Hours</label>
+            <div class="col-sm-8">
+                <input class="form-control"
+                       type="number"
+                       step="0.1"
+                       name="sleep_hours"
+                       placeholder="Enter sleep hours"
+                       value="{{ form_data.sleep_hours }}">
+            </div>
+        </div>
+
+        <!-- Task Completion Rate -->
+        <div class="mb-3 row align-items-center">
+            <label class="col-sm-4 col-form-label fw-bold">Task Completion Rate (0–100)</label>
+            <div class="col-sm-8">
+                <input class="form-control"
+                       type="number"
+                       name="task_completion_rate"
+                       min="0"
+                       max="100"
+                       step="0.1"
+                       placeholder="Enter task completion rate"
+                       value="{{ form_data.task_completion_rate }}">
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="mb-3 text-center">
+            <button type="submit" class="btn btn-primary fw-bold px-5 me-2">
+                Predict Burnout Score
+            </button>
+            <button type="button" class="btn btn-outline-secondary fw-bold px-5" id="clearBtn">
+                Clear Form
+            </button>
+        </div>
+
+    </form>
+
+    <!-- Error message -->
+    {% if error %}
+    <div class="alert alert-danger text-center mt-3" role="alert">
+        <strong>Error:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Prediction result -->
+    {% if results is not none %}
+    <div class="alert alert-success text-center mt-3" role="alert">
+        <h4 class="mb-0">
+            Predicted Burnout Score:
+            <strong>{{ "%.2f"|format(results) }}</strong>
+        </h4>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    document.getElementById('clearBtn').addEventListener('click', function () {
+
+        const resultAlert = document.querySelector('.alert-success');
+        if (resultAlert) resultAlert.remove();
+
+        setTimeout(() => {
+
+            document.querySelectorAll('select').forEach(select => {
+                select.selectedIndex = 0;
+            });
+
+            document.querySelectorAll('input').forEach(input => {
+                input.value = '';
+                input.setCustomValidity('');
+            });
+
+        }, 10);
+
+        document.querySelector('select[name="day_type"]').focus();
+    });
+</script>
+
+</body>
+</html>
