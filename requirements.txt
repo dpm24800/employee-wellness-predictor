@@ -1,0 +1,14 @@
+setuptools
+numpy
+pandas
+matplotlib
+seaborn
+scikit-learn
+catboost
+xgboost
+dill
+flask
+altair==4.2.2
+streamlit>=1.23.0
+
+-e .

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.rtl.min.css"
+          integrity="sha384-CfCrinSRH2IR6a4e6fy2q6ioOX7O6Mtm1L9vRvFZ1trBncWmMePhzvafv7oIcWiW"
+          crossorigin="anonymous">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <title>Burnout Score Prediction</title>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            background: linear-gradient(135deg, #a1c4fd, #c2e9fb, #e0c3fc);
+
+            min-height: 100vh;
+        }
+
+        .login {
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            border-radius: 16px;
+            max-width: 800px;
+            margin-top: 50px;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        h1 {
+            font-weight: 700;
+            color: #243a50;
+        }
+
+        legend {
+            font-weight: 600;
+            color: #3b556f;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 10px;
+            padding: .6rem .75rem;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            box-shadow: 0 0 0 .2rem rgba(13,110,253,.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #2563eb);
+            border: none;
+            border-radius: 999px;
+            padding: .6rem 2rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(37,99,235,.25);
+        }
+
+        .btn-outline-secondary {
+            border-radius: 999px;
+        }
+
+        .alert {
+            border-radius: 10px;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login mx-auto bg-white p-4 rounded">
+
+    <h1 class="text-center">Employee Burnout Score Prediction</h1>
+
+    <form action="{{ url_for('predict_datapoint') }}" method="post">
+
+        <h4 class="text-center mt-3">
+            <legend>Burnout Score Prediction Form</legend>
+        </h4>
+        <hr>
+
+        <!-- Day Type -->
+        <div class="mb-3 row align-items-center">
+            <label class="col-sm-4 col-form-label fw-bold">Day Type</label>
+            <div class="col-sm-8">
+                <select class="form-select" name="day_type" required>
+                    <option value="" {% if not form_data.day_type %}selected{% endif %}>
+                        Select Day Type
+                    </option>
+                    <option value="1" {% if form_data.day_type == '1' %}selected{% endif %}>
+                        Weekday
+                    </option>
+                    <option value="0" {% if form_data.day_type == '0' %}selected{% endif %}>
+                        Weekend
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Other Inputs -->
+        {% set fields = [
+            {'label':'Work Hours','name':'work_hours','type':'number','step':'0.1'},
+            {'label':'Screen Time (hours)','name':'screen_time_hours','type':'number','step':'0.1'},
+            {'label':'Meetings Count','name':'meetings_count','type':'number'},
+            {'label':'Breaks Taken','name':'breaks_taken','type':'number'},
+            {'label':'After-hours Work (hours)','name':'after_hours_work','type':'number','step':'0.1'},
+            {'label':'Sleep Hours','name':'sleep_hours','type':'number','step':'0.1'},
+            {'label':'Task Completion Rate (0–100)','name':'task_completion_rate','type':'number','step':'0.1','min':'0','max':'100'}
+        ] %}
+        {% for field in fields %}
+        <div class="mb-3 row align-items-center">
+            <label class="col-sm-4 col-form-label fw-bold">{{ field.label }}</label>
+            <div class="col-sm-8">
+                <input class="form-control"
+                       type="{{ field.type }}"
+                       name="{{ field.name }}"
+                       {% if field.step %}step="{{ field.step }}"{% endif %}
+                       {% if field.min %}min="{{ field.min }}"{% endif %}
+                       {% if field.max %}max="{{ field.max }}"{% endif %}
+                       placeholder="Enter {{ field.label | lower }}"
+                       value="{{ form_data[field.name] }}">
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Buttons -->
+        <div class="mb-3 text-center">
+            <button type="submit" class="btn btn-primary fw-bold px-5 me-2">
+                Predict Burnout Score
+            </button>
+            <button type="button" class="btn btn-outline-secondary fw-bold px-5" id="clearBtn">
+                Clear Form
+            </button>
+        </div>
+
+    </form>
+
+    <!-- Error message -->
+    {% if error %}
+    <div class="alert alert-danger text-center mt-3" role="alert">
+        <strong>Error:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Prediction result
+    {% if results is not none %}
+    <div class="alert alert-success text-center mt-3" role="alert">
+        <h4 class="mb-0">
+            Predicted Burnout Score:
+            <strong>{{ "%.2f"|format(results) }}</strong>
+        </h4>
+    </div>
+    {% endif %} -->
+
+    <!-- Prediction result -->
+    {% if results is not none %}
+    <div class="text-center mt-3">
+
+        <!-- Burnout Score -->
+        <div class="alert alert-success" role="alert">
+            <h4 class="mb-0">
+                Predicted Burnout Score: <strong>{{ "%.2f"|format(results) }}</strong>
+            </h4>
+        </div>
+
+        <!-- Risk Level -->
+        {% set risk_color = '' %}
+        {% set risk_text = '' %}
+        {% if results <= 40 %}
+            {% set risk_color = 'success' %}
+            {% set risk_text = 'Low Risk' %}
+        {% elif results <= 70 %}
+            {% set risk_color = 'warning' %}
+            {% set risk_text = 'Medium Risk' %}
+        {% else %}
+            {% set risk_color = 'danger' %}
+            {% set risk_text = 'High Risk' %}
+        {% endif %}
+
+        <div class="alert alert-{{ risk_color }}" role="alert">
+            <h5 class="mb-0">Risk Level: <strong>{{ risk_text }}</strong></h5>
+        </div>
+
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    document.getElementById('clearBtn').addEventListener('click', function () {
+
+        const resultAlert = document.querySelector('.alert-success');
+        if (resultAlert) resultAlert.remove();
+
+        setTimeout(() => {
+            document.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+            document.querySelectorAll('input').forEach(input => input.value = '');
+        }, 10);
+
+        document.querySelector('select[name="day_type"]').focus();
+    });
+</script>
+
+</body>
+</html>
